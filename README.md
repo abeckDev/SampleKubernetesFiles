@@ -1,3 +1,3 @@
 # SampleKubernetesFile
 
-Sammlung von Kubernetesfiles aus meinen Projekten zugeordnet nach Szenarien
+A collection of commonly used Kubernetes Files form my projects and demonstrations. 

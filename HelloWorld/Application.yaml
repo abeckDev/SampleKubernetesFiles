@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1 
+kind: Deployment
+metadata:
+  name: hello-world # Name of the Deployment
+spec:
+  replicas: 1 # how much replicas of the pod shoud be create 
+  strategy: 
+    type: Recreate # Container upgrade strategie
+  template:
+    metadata:
+      labels:
+        app: hello-world # Sets the Label for all Pods in this template - Via the Label Services, replications sets,... are identified
+    spec:
+      containers: # Container definition inside of the Pod
+      - name: aks-hello-world # Name of the Container
+        image: neilpeterson/aks-helloworld:v1 # Image of the Container
+        resources: # Container Resource management
+          limits: # set the maximum of rescources which can be consumed by the container - IMPORTANT
+            memory: "2Gi" # In Gigabyte
+            cpu: "1" # In Cores
+          requests: # set the resources which should be requested at thestart of the container - OPTIONAL
+            memory: "1Gi"
+            cpu: "0.5"
+        ports:
+        - name: webpage # Function of the Port
+          containerPort: 80 # Name of the Port
+        volumeMounts: # Defines Mount points for a specific container
+          - name: persistent-data # Mounts the volume with the name persistent-data (Will be defined later in this file)
+            mountPath: /opt/data # mount Endpoint in the Container
+        securityContext: # Security Settings
+          runAsUser: 0 # Container will be run as root user
+      volumes:
+          - name: persistent-data # Defines the volume jenkins-data
+            persistentVolumeClaim: # Use persisten volume claim as storage 
+              claimName: myapp-persistent-storage-claim # use the claim we created above

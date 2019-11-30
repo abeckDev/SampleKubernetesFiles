@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass # We want to create a Storage Class Resource
+metadata:
+  name: azuredisk # Name of the storage class
+provisioner: kubernetes.io/azure-disk # We will use the azure-disk provisioner which will create the azure ressources in the background so we dont have to take care about that
+parameters:
+  storageaccounttype: Standard_LRS # Which Storage Account type to use
+  kind: Managed #  Managed (Use managed disks [AKS Support this way please]), Shared (Unmanaged Disk are all stored in same StorageAccount in same RG), Dedicated (every disk in single Storage Account)

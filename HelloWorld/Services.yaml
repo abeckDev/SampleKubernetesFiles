@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-endpoint # name of the service
+spec:
+  type: LoadBalancer # Kind of service to use. This setting will expose the service via Azure LoadBalancer to the Internet 
+  ports:
+    - name: webinterface
+      port: 80
+      targetPort: 80
+  selector:
+    app: hello-world # which containers serve the service

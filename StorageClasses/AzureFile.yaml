@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass # We want to create a Storage Class Resource 
+metadata:
+  name: azurefile # Name of this new storage class
+provisioner: kubernetes.io/azure-file # We will use the azure-file provisioner which will create the azure ressources in the background so we dont have to take care about that
+parameters:
+  skuName: Standard_LRS  # Which Storage type to use (according to Azure Storage Account)
+  location: westeurope # Location of the storage account to use
+  storageAccount: dsbf03ace21a5911e99f995 # Name of the Storage account IN the AKS ResourceGroup without the domain extension of Azure

@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user # Name des Role Bindings
+roleRef: # Gibt an welche Berechtigung verwendet werden soll
+  apiGroup: rbac.authorization.k8s.io # Nutzt die Berechtigungen, welche in der API Group definiert sind
+  kind: ClusterRole # Typ der verwendeten Rollen für die zuweisung ist ClusterRole
+  name: cluster-admin # Name der zuzuweisenden Rolle für den Service Account
+subjects: # Gibt an, wem die Rolle zugewiesen wird
+- kind: ServiceAccount # 
+  name: admin-user
+  namespace: kube-system

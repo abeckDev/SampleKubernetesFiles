@@ -1,0 +1,113 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: registry-storage-claim # Name of the Claim
+  annotations: 
+    volume.beta.kubernetes.io/storage-class: azuredisk # Name of the Storage Class you want to use to dynamically get your storage
+spec:
+  accessModes:
+  - ReadWriteOnce # ReadOnlyMany", "ReadWriteMany", "ReadWriteOnce" | AzureDisk just support once and AzureFile support many
+  resources:
+    requests:
+      storage: 8Gi # How much storage do you want for your claim
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment # Neues Deployment
+metadata: # Metadaten des Deployments
+  name: registry
+  labels:
+    app: registry
+spec:
+  strategy:
+    type: Recreate # Always recreate the container
+  template:
+    metadata: # Metada for all Pods in the deployment
+      labels:
+        app: registry 
+    spec:
+      containers: # Definition of the Containers in the Pod
+      - name: registry # Name of the Container
+        image: registry:2 # Dockerimage to use
+        resources: # Resourcemanagement
+          limits: # Sets Resource Limits
+            memory: "2Gi" # Not more than 2 GB for this Container
+            cpu: "1" # Not more than one Core for him
+          request: # How much Resources should the container request 
+            memory: "1Gi" # At least 1 GB Memory for him
+        volumeMounts: # Declaration of the Volumes of the Container
+        - name: docker # Name of the volume
+          mountPath: /var/run/docker.sock # Path to mount the volume inside the container
+        - name: registry-persistent-storage
+          mountPath: /var/lib/registry
+        ports: # Ports to expose 
+        - name: registry # Name of first Port 
+          containerPort: 5000 # Port to expose 
+       # env: # Defininf Env Vars
+       # - name: REGISTRY_HTTP_TLS_CERTIFICATE
+       #   value: /var/lib/registry/pki/Docker-Registry.crt
+       # - name: REGISTRY_HTTP_TLS_KEY
+       #   value: /var/lib/registry/pki/Docker-RegistryPriv.key
+      volumes: # Volume creation
+      - name: docker # Name of the volume mount to attach
+        hostPath: # Driver of the Volume in that case mount a local path
+          path: /var/run/docker.sock # Local Path to mount in the Container
+      - name: registry-persistent-storage # Name of the Volume to attach
+        persistentVolumeClaim: # Use our pre defined Persistent Volume CLaim
+          claimName: registry-storage-claim # Name of the Claim to attach
+---
+apiVersion: v1
+kind: Service # Create a Service
+metadata:
+  name: registry-entrypoint # Name of the Service
+  labels: # Labels
+    app: registry
+spec:
+  ports: # Ports to serve 
+    - name: registry # Name of the first Port Service
+      port: 5000 # Port to Expose with the service in the cluster
+      targetPort: 5000 # Port in the container on which the service will attach
+  selector:
+    app: registry # Which Pods to choose
+  type: LoadBalancer # Use an AzureLoadBalancer (Kubernetes will create the neccessary rules for you) to expose this Service to the Internet
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: registry-ui
+spec:
+  template:
+    metadata:
+      labels:
+        app: registry-ui
+    spec:
+      containers:
+      - name: registry-ui
+        image: hyper/docker-registry-web
+        ports:
+        - name: registry-ui
+          containerPort: 8080
+        env:
+        - name: REGISTRY_URL
+          value: http://registry-entrypoint.default.svc.cluster.local:5000/v2 # This will resolve to the Service Cluster ip wich redirects to all spawned Registrys in the whole Cluster (enables scaling)
+        - name: REGISTRY_TRUST_ANY_SSL
+          value: "true"
+        - name: REGISTRY_BASIC_AUTH
+          value: YWxiZTpnb2xpbnV4
+        - name: REGISTRY_NAME
+          value: registry-entrypoint.default.svc.cluster.local:5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-ui-entrypoint
+  labels:
+    app: registry-ui
+spec:
+  ports:
+    - name: registry-ui
+      port: 80
+      targetPort: 8080
+  selector:
+    app: registry-ui
+  type: LoadBalancer

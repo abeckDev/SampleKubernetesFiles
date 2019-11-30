@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-persistent-storage-claim #  Name of the persistent volume claim
+  annotations:
+    volume.beta.kubernetes.io/storage-class: azuredisk  # Name of the Storage Class you want to use to dynamically get your storage
+spec:
+  accessModes:
+    - ReadWriteOnce # ReadOnlyMany", "ReadWriteMany", "ReadWriteOnce" | AzureDisk just support once and AzureFile support many
+  resources:
+    requests:
+      storage: 50Gi # How much storage do you want for your claim
+---
+apiVersion: extensions/v1beta1 
+kind: Deployment
+metadata:
+  name: jenkins-server # Name of the Deployment
+spec:
+  replicas: 1 # how much replicas of the pod shoud be create 
+  strategy: 
+    type: Recreate # Container upgrade strategie
+  template:
+    metadata:
+      labels:
+        app: jenkins-server # Sets the Label for all Pods in this template - Via the Label Services, replications sets,... are identified
+    spec:
+      containers: # Container definition inside of the Pod
+      - name: jenkins # Name of the Container
+        image: jenkins/jenkins:lts # Image of the Container
+        resources: # Container Resource management
+          limits: # set the maximum of rescources which can be consumed by the container - IMPORTANT
+            memory: "8Gi" # In Gigabyte
+            cpu: "2" # In Cores
+          requests: # set the resources which should be requested at thestart of the container - OPTIONAL
+            memory: "3Gi"
+            cpu: "1"
+        ports:
+        - name: jenkinsweb # Function of the Port
+          containerPort: 8080 # Name of the Port
+        - name: k8splugin # Function of the Port
+          containerPort: 50000 # Name of the Port
+        volumeMounts: # Defines Mount points for a specific container
+          - name: jenkins-data # Mounts the volume with the name jenkins-data (Will be defined later in this file)
+            mountPath: /var/jenkins_home # mount Endpoint in the Container
+          - name: docker-socket # Mounts the Docker Socket
+            mountPath: /var/run/docker.sock # Path in the Container where to place the Socket
+        securityContext: # Security Settings
+          runAsUser: 0 # Container will be run as user root (otherwise change user id)
+      volumes: # Defines Volumes
+          - name: jenkins-data # Defines the volume jenkins-data
+            persistentVolumeClaim: # Use persisten volume claim as storage 
+              claimName: jenkins-persistent-storage-claim # use the claim we created above
+          - name: docker-socket
+            hostPath: # use the host path of the node to provide storage
+              path: /var/run/docker.sock # Path to Docker Socket
+              type: Socket # Type Socket
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-kubernetes-plugin-endpoint # name of the service
+spec:
+  type: ClusterIP # Kind of service in that kind it means it will create a cluster internal ip 
+  ports:
+    - name: kubernetesplugininterface # name of the port in the service
+      port: 50000 # Port to expose on the Cluster IP of the Service and (if used) on the external loadbalancer
+      targetPort: 50000 # Port in the container which provides the service
+    - name: jenkinswebinterface
+      port: 80
+      targetPort: 8080
+  selector:
+    app: jenkins-server # which containers serve the service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-webinterface-endpoint
+spec:
+  type: LoadBalancer
+  ports:
+    - name: jenkinswebinterface
+      port: 80
+      targetPort: 8080
+  selector:
+    app: jenkins-server

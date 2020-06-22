@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: execJob
+  name: execjob
 spec:
   containers:
-  - name: runonce
+  - name: execjob
     image: centos:latest
-    command: ["/bin/bash", "-c" "echo Hello world;", "sleep 20;", "echo Goodbye world", "sleep 3"]
+    command: ["/bin/bash", "-c", "echo Hello world;", "sleep 20;", "echo Goodbye world", "sleep 3"]
   restartPolicy: Never
   nodeSelector:
             kubernetes.io/role: agent

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: execJob
+spec:
+  containers:
+  - name: runonce
+    image: centos:latest
+    command: ["/bin/bash", "-c" "echo Hello world;", "sleep 20;", "echo Goodbye world", "sleep 3"]
+  restartPolicy: Never
+  nodeSelector:
+            kubernetes.io/role: agent
+            beta.kubernetes.io/os: linux
+            type: virtual-kubelet
+  tolerations:
+  - key: "virtual-kubelet.io/provider"
+    operator: Equal
+    value: "azure"

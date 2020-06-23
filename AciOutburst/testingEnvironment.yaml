@@ -1,25 +1,19 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: persistenenv
-  labels:
-    app: testenv
+  name: __PodName__
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: testenv
-  template:
-    metadata:
-      labels:
-        app: testenv
-    spec:
-      containers:
-      - name: testenv
-        image: centos:latest
-        command: [ "/bin/bash" ]
-        args: ["-c", 'run=1; while true; do echo "This is the $run run and I am still alive!"; run=$((run+1)); sleep 3; done']
-      tolerations:
-      - key: "virtual-kubelet.io/provider"
-        operator: Equal
-        value: "azure"
+  containers:
+  - name: testenv
+    image: centos:latest
+    command: [ "/bin/bash" ]
+    args: ["-c", 'run=1; while true; do echo "This is the $run run and I am still alive!"; run=$((run+1)); sleep 3; done']
+  tolerations:
+  - key: "virtual-kubelet.io/provider"
+    operator: Equal
+    value: "azure"
+  restartPolicy: Never
+  tolerations:
+  - key: "virtual-kubelet.io/provider"
+    operator: Equal
+    value: "azure"

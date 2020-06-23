@@ -17,6 +17,7 @@ spec:
       containers:
       - name: testenv
         image: centos:latest
+        command: ["/bin/bash", "-c", "cat"]
       tolerations:
       - key: "virtual-kubelet.io/provider"
         operator: Equal

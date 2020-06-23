@@ -4,7 +4,7 @@ metadata:
   name: __PodName__
 spec:
   containers:
-  - name: testenv
+  - name: __PodName__
     image: centos:latest
     command: [ "/bin/bash" ]
     args: ["-c", 'run=1; while true; do echo "This is the $run run and I am still alive!"; run=$((run+1)); sleep 3; done']
@@ -13,7 +13,3 @@ spec:
     operator: Equal
     value: "azure"
   restartPolicy: Never
-  tolerations:
-  - key: "virtual-kubelet.io/provider"
-    operator: Equal
-    value: "azure"

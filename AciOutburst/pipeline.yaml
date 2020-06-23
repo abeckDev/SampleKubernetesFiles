@@ -1,0 +1,71 @@
+jobs:
+- job: SetupEnv
+  displayName: 'Setup Test Environment' 
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    - script: |
+        PodName=$(echo $(Build.DefinitionName)-$(Build.BuildNumber) | tr -dc a-z0-9)
+        echo $PodName
+        echo "##vso[task.setvariable variable=PodName] $PodName"
+        echo $PodName
+      displayName: "Set Env Var"
+    - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+      displayName: "Replace tokens in testingEnvironment.yaml"
+      inputs:
+        rootDirectory: AciOutburst
+        targetFiles: testingEnvironment.yaml
+        tokenPrefix: "__"
+        tokenSuffix: "__"
+
+    - task: KubernetesManifest@0
+      displayName: deploy
+      inputs:
+        kubernetesServiceConnection: "KubeTest-AksDemoCluster-default-1592853187390"
+        namespace: default
+        manifests: AciOutburst/testingEnvironment.yaml
+
+- job: ExecTests
+  displayName: 'Execute the tests'
+  dependsOn: SetupEnv
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+
+  - script: |
+      PodName=$(echo $(Build.DefinitionName)-$(Build.BuildNumber) | tr -dc a-z0-9)
+      echo $PodName  
+      echo "##vso[task.setvariable variable=PodName] $PodName"
+      echo $PodName
+    displayName: 'Set Env Var'
+
+  - task: Kubernetes@1
+    displayName: 'kubectl exec'
+    inputs:
+      kubernetesServiceEndpoint: 'KubeTest-AksDemoCluster-default-1592853187390'
+      namespace: default
+      command: exec
+      arguments: '$(PodName) -- /bin/bash -c echo Starting Test procedure; sleep 15; echo Done'
+
+- job: Cleanup
+  displayName: 'Cleanup Environment'
+  dependsOn:
+    - SetupEnv
+    - ExecTests
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - script: |
+      PodName=$(echo $(Build.DefinitionName)-$(Build.BuildNumber) | tr -dc a-z0-9)
+      echo $PodName
+      echo "##vso[task.setvariable variable=PodName] $PodName"
+      echo $PodName
+    displayName: 'Set Env Var'
+    
+  - task: Kubernetes@1
+    displayName: 'kubectl delete'
+    inputs:
+      kubernetesServiceEndpoint: 'KubeTest-AksDemoCluster-default-1592853187390'
+      namespace: default
+      command: delete
+      arguments: 'pod $(PodName)'

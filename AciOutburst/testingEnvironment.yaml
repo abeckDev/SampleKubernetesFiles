@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: persistenenv
+  labels:
+    app: testenv
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testenv
+  template:
+    metadata:
+      labels:
+        app: testenv
+    spec:
+      containers:
+      - name: testenv
+        image: centos:latest
+      tolerations:
+      - key: "virtual-kubelet.io/provider"
+        operator: Equal
+        value: "azure"

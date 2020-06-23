@@ -26,14 +26,27 @@ spec:
 
 On the other hand [pipeline.yaml](AciOutburst/pipeline.yaml) describes an [Azure DevOps YAML Pipeline](https://docs.microsoft.com/en-us/azure/devops/pipelines/create-first-pipeline?view=azure-devops&tabs=java%2Cyaml%2Cbrowser%2Ctfs-2018-2).
 This pipeline contains three agents jobs and will first setup the needed environment with [testingEnvironment.yaml](AciOutburst/testingEnvironment.yaml) and then execute commands with kubectl in the environment.
+
 If you want to extend these abilities make adjustmens to the following lines:
 
 ```yaml
-...
+... [Line 47 - 54]
+# Execute the command in the existing pod with kubectl exec --> Make sure to link your Kubernetes Service connection: https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints?view=azure-devops&tabs=yaml#create-a-service-connection
+  - task: Kubernetes@1
+    displayName: 'kubectl exec'
+    inputs:
+      kubernetesServiceEndpoint: 'KubeTest-AksDemoCluster-default-1592853187390'
+      namespace: default
+      command: exec
+      arguments: '$(PodName) -- /bin/bash -c echo Starting Test procedure; sleep 15; echo Done' <----- Add your commands here
 
 ...
 ```
 
 ### persistentSample
 
+Will create a simple nginx container as ACI instance and wont exit.
+
 ### runOnce
+
+Will create a simple Job as an ACI instance which will be alive for a specific amount of time. It will exist afterwards. 
